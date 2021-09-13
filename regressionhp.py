@@ -23,6 +23,9 @@ from seaborn import kdeplot
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.cluster.hierarchy import fcluster
+from sklearn.linear_model import Ridge
+from sklearn.metrics import mean_squared_error
+from math import sqrt
 
 
 os.chdir(r"C:\Users\PriyankRao\OneDrive - E2\Documents\Project\webscrapping")
@@ -113,7 +116,7 @@ class housingPrice():
         #, 'Lot Area'
         x = X[['living Area']]
         Y =enc_df['Price']
-        X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size =0.7, test_size = 0.3, random_state = 100)
+        X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size =0.7, test_size = 0.3, random_state = 3)
         
         X_train_sm = sm.add_constant(X_train)
         
@@ -123,12 +126,61 @@ class housingPrice():
         X_test_sm = sm.add_constant(X_test)
         y_test_pred = lr.predict(X_test_sm)
         pre = pd.DataFrame(y_test_pred, columns={'Prediction'})
+        print("=============================================================================")        
+        
+        rmse = round(sqrt(mean_squared_error(y_test, y_test_pred)),2)  
+        print("The RMSE for the regression model(OLS) is: ", rmse)
+        print("=============================================================================")        
 
         dataframe =  pd.merge(enc_df, X_test_sm, left_index = True, right_index = True, how = 'right')
         dataframe = pd.merge(dataframe, y_test, left_index = True, right_index = True, how = 'right')
         dataframe = pd.merge(dataframe, pre, left_index = True, right_index = True, how = 'right')
-        dataframe.to_excel('prediction.xlsx', index = False)
-
+        dataframe.to_excel('LR Prediction.xlsx', index = False)
+        
+    def Ridge(self, hp):
+        enc_df = pd.get_dummies(hp, columns =['House Type', 'Clusters'])
+         
+        X = enc_df.drop(['Price'], axis=1)
+        X = X[['living Area',
+       'House Type_APARTMENT', 'House Type_CONDO', 'House Type_MULTI_FAMILY',
+       'House Type_SINGLE_FAMILY', 'House Type_TOWNHOUSE', 'Clusters_B',
+       'Clusters_C', 'Clusters_D', 'Clusters_E', 'Clusters_F', 'Clusters_G',
+       'Clusters_H', 'Clusters_I', 'Clusters_J', 'Clusters_K', 'Clusters_L',
+       'Clusters_M', 'Clusters_N', 'Clusters_O', 'Clusters_P', 'Clusters_Q',
+       'Clusters_R', 'Clusters_S', 'Clusters_T', 'Clusters_U', 'Clusters_V']]
+        
+        print("Working on ridge regression......")
+        
+        #, 'Lot Area'
+        x = X[['living Area']]
+        Y =enc_df['Price']
+        X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size =0.7, test_size = 0.3, random_state = 3)
+        
+        rr = Ridge(alpha = 10)
+        rr.fit(X_train, y_train)
+        Ridge_train_score = rr.score(X_train, y_train)
+        Ridge_test_score = rr.score(X_test, y_test)
+        
+        print("Getting the prediction via Ridge regression......")
+        prediction = rr.predict(X_test)
+        pred_df = pd.DataFrame(prediction, columns = ['Prediction'])
+        X_test.columns
+        ind_sample = y_test
+        ind_sample = ind_sample.reset_index(drop =True)
+        pred_df = pred_df.join(ind_sample)
+        pred_df = pred_df.round(2)
+        
+        print("=============================================================================")        
+        rmse = round(sqrt(mean_squared_error(pred_df['Price'], pred_df['Prediction'])),2)  
+        print("The root mean square error for the Ridge regression model is: ", rmse)
+        print("=============================================================================")        
+        
+        
+        # print("Ridge Train Score: ")
+        # print(Ridge_train_score)
+        
+        # print("Ridge Test Score: ")
+        # print(Ridge_test_score)
         
     def run(self):
         df = pd.read_csv(r'houseinfo.csv')
@@ -138,7 +190,7 @@ class housingPrice():
         self.VIF(df)
         hp = self.Clustering(df)
         self.LinearRegression(hp)
-        
+        self.Ridge(hp)
         
         
 if __name__ == '__main__':
