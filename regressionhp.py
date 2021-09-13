@@ -111,10 +111,6 @@ class housingPrice():
        'Clusters_H', 'Clusters_I', 'Clusters_J', 'Clusters_K', 'Clusters_L',
        'Clusters_M', 'Clusters_N', 'Clusters_O', 'Clusters_P', 'Clusters_Q',
        'Clusters_R', 'Clusters_S', 'Clusters_T', 'Clusters_U', 'Clusters_V']]
-        print("Printing the independent variables......")
-        print(X.columns)
-        #, 'Lot Area'
-        x = X[['living Area']]
         Y =enc_df['Price']
         X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size =0.7, test_size = 0.3, random_state = 3)
         
